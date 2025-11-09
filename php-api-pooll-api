@@ -1,0 +1,199 @@
+<?php
+header('Content-Type: application/json; charset=UTF-8');
+
+$host = 'localhost';
+$db   = 'metrosz8z9h0_My-Shutle';
+$user = 'metrosz8z9h0_Kgabo';
+$pass = '~jut$Ok(zOi)r;Zw';
+$charset = 'utf8mb4';
+$table = 'bookings';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES => false,
+];
+
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (\PDOException $e) {
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    exit;
+}
+
+$action = $_GET['action'] ?? '';
+try {
+    if ($action === 'insert') {
+        $data = $_GET['data'] ?? '';
+        if ($data) {
+            $booking = json_decode($data, true);
+            if (!$booking) throw new Exception("Invalid JSON");
+
+            $stmt = $pdo->prepare("
+                INSERT INTO `$table`
+                (shuttle_id, passengerName, email, phone, route, date, time, seats, price, path, car, createdAt)
+                VALUES
+                (:shuttle_id, :passengerName, :email, :phone, :route, :date, :time, :seats, :price, :path, :car, NOW())
+            ");
+            $stmt->execute([
+                'shuttle_id' => $booking['shuttle_id'] ?? '',
+                'passengerName' => $booking['passengerName'] ?? '',
+                'email' => $booking['email'] ?? '',
+                'phone' => $booking['phone'] ?? null,
+                'route' => $booking['route'] ?? '',
+                'date' => $booking['date'] ?? date('Y-m-d'),
+                'time' => $booking['time'] ?? date('H:i:s'),
+                'seats' => $booking['seats'] ?? 1,
+                'price' => $booking['price'] ?? 0,
+                'path' => $booking['path'] ?? null,
+                'car' => $booking['car'] ?? 'Toyota Quantum'
+            ]);
+
+            echo json_encode(['success' => true, 'id' => $pdo->lastInsertId()]);
+        }
+        exit;
+    }
+
+    if ($action === 'select') {
+        $limit = intval($_GET['limit'] ?? 10);
+        $stmt = $pdo->prepare("SELECT * FROM `$table` ORDER BY id DESC LIMIT :limit");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+        echo json_encode(['success' => true, 'data' => $rows]);
+        exit;
+    }
+} catch (\Exception $e) {
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    exit;
+}
+
+
+// --- Existing HTML UI (unchanged) ---
+$message = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    $data   = $_POST['data'] ?? '';
+    $id     = intval($_POST['id'] ?? 0);
+
+    try {
+        switch ($action) {
+            case 'insert':
+                if ($data) {
+                    $stmt = $pdo->prepare("INSERT INTO `$defaultTable` (data) VALUES (:data)");
+                    $stmt->execute(['data' => $data]);
+                    $message = "Inserted ID: " . $pdo->lastInsertId();
+                }
+                break;
+            case 'update':
+                if ($id && $data) {
+                    $stmt = $pdo->prepare("UPDATE `$defaultTable` SET data = :data WHERE id = :id");
+                    $stmt->execute(['data' => $data, 'id' => $id]);
+                    $message = "Updated rows: " . $stmt->rowCount();
+                }
+                break;
+            case 'delete':
+                if ($id) {
+                    $stmt = $pdo->prepare("DELETE FROM `$defaultTable` WHERE id = :id");
+                    $stmt->execute(['id' => $id]);
+                    $message = "Deleted rows: " . $stmt->rowCount();
+                }
+                break;
+            case 'create_table':
+                $newTable = $_POST['table_name'] ?? '';
+                if ($newTable) {
+                    $pdo->exec("
+                        CREATE TABLE IF NOT EXISTS `$newTable` (
+                            id INT AUTO_INCREMENT PRIMARY KEY,
+                            data TEXT NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        ) ENGINE=InnoDB;
+                    ");
+                    $message = "Table `$newTable` created or already exists.";
+                }
+                break;
+        }
+    } catch (\PDOException $e) {
+        $message = "Error: " . $e->getMessage();
+    }
+}
+
+// Fetch current data for the UI
+$stmt = $pdo->query("SELECT * FROM `$defaultTable` ORDER BY id DESC");
+$rows = $stmt->fetchAll();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>API Pool Management</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; }
+h1 { color: #2c3e50; }
+table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+table, th, td { border: 1px solid #ddd; }
+th, td { padding: 10px; text-align: left; }
+tr:nth-child(even) { background: #f2f2f2; }
+input[type=text], input[type=number] { padding: 5px; width: 250px; }
+button { padding: 5px 12px; margin: 2px; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 4px; }
+button.delete { background: #e74c3c; }
+button.update { background: #f39c12; }
+.message { background: #d4edda; padding: 10px; margin: 10px 0; border-left: 4px solid #28a745; }
+.api-link { margin: 15px 0; display: block; color: #2980b9; }
+form.inline { display: inline-block; }
+</style>
+</head>
+<body>
+
+<h1>API Pool Management</h1>
+
+<?php if ($message) echo "<div class='message'>{$message}</div>"; ?>
+
+<h2>API Endpoint:</h2>
+<a class="api-link" href="api.php?action=select&table=<?= $defaultTable ?>&limit=10" target="_blank">
+<?= 'api.php?action=select&table=' . $defaultTable . '&limit=10' ?>
+</a>
+
+<h2>Create New Table</h2>
+<form method="POST">
+<input type="text" name="table_name" placeholder="New table name" required>
+<button type="submit" name="action" value="create_table">Create Table</button>
+</form>
+
+<h2>Insert New Data</h2>
+<form method="POST">
+<input type="text" name="data" placeholder="Enter data" required>
+<button type="submit" name="action" value="insert">Insert</button>
+</form>
+
+<h2>Existing Records (<?= htmlspecialchars($defaultTable) ?>)</h2>
+<table>
+<tr>
+<th>ID</th>
+<th>Data</th>
+<th>Created At</th>
+<th>Actions</th>
+</tr>
+<?php foreach ($rows as $row): ?>
+<tr>
+<td><?= htmlspecialchars($row['id']) ?></td>
+<td><?= htmlspecialchars($row['data']) ?></td>
+<td><?= $row['created_at'] ?></td>
+<td>
+<form class="inline" method="POST">
+<input type="hidden" name="id" value="<?= $row['id'] ?>">
+<input type="text" name="data" placeholder="New value" required>
+<button class="update" type="submit" name="action" value="update">Update</button>
+</form>
+<form class="inline" method="POST">
+<input type="hidden" name="id" value="<?= $row['id'] ?>">
+<button class="delete" type="submit" name="action" value="delete" onclick="return confirm('Delete this row?')">Delete</button>
+</form>
+</td>
+</tr>
+<?php endforeach; ?>
+</table>
+
+</body>
+</html>
