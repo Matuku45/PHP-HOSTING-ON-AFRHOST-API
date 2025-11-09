@@ -88,33 +88,4 @@ Backend Language: PHP (version 7.4+)
 
 Database: MySQL (via phpMyAdmin)
 
-API Format: JSON-based REST
-
-Security: PDO prepared statements prevent SQL injection.
-
-🚀 Example API Usage
-
-Insert a booking:
-
-GET https://your-afrihost-domain.com/api.php?action=insert&data={"shuttle_id":12345,"passengerName":"Kgabo Thabiso","email":"kgabo@example.com","phone":"+27831234567","route":"Pretoria – Johannesburg","date":"2025-11-10","time":"08:00:00","seats":2,"price":200,"path":"/route/path","car":"Toyota Quantum"}
-
-
-Get bookings:
-
-GET https://your-afrihost-domain.com/api.php?action=select&limit=10
-
-
-Response:
-
-{
-  "success": true,
-  "data": [
-    {
-      "id": 1,
-      "passengerName": "Kgabo Thabiso",
-      "route": "Pretoria – Johannesburg",
-      "price": "200.00",
-      "createdAt": "2025-11-09 02:18:23"
-    }
-  ]
-}
+API Format: JSON-based RE
