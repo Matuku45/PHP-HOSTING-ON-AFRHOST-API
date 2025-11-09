@@ -39,9 +39,6 @@ Dynamic Data Handling
 
 JSON-based data exchange for easy integration with external systems.
 
-Example request:
-
-https://yourdomain.com/api.php?action=insert&data={"shuttle_id":1,"passengerName":"Thabiso","email":"thabiso@example.com","phone":"+27831234567","route":"Pretoria - Johannesburg","seats":2,"price":200}
 
 
 Web Interface (Admin Panel)
@@ -89,3 +86,67 @@ Backend Language: PHP (version 7.4+)
 Database: MySQL (via phpMyAdmin)
 
 API Format: JSON-based RE
+
+
+-- Table: users
+CREATE TABLE `users` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL,
+  `email` VARCHAR(100) UNIQUE NOT NULL,
+  `phone` VARCHAR(20),
+  `password` VARCHAR(255) NOT NULL,
+  `role` ENUM('admin', 'passenger', 'user') DEFAULT 'user',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table: shuttles
+CREATE TABLE `shuttles` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `route` VARCHAR(255) NOT NULL,
+  `date` DATE NOT NULL,
+  `time` TIME NOT NULL,
+  `duration` VARCHAR(100) NOT NULL,
+  `pickup` VARCHAR(255) NOT NULL,
+  `seats` INT NOT NULL,
+  `price` DECIMAL(10,2) NOT NULL,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table: location_forms
+CREATE TABLE `location_forms` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `fromLocation` VARCHAR(255) NOT NULL,
+  `toLocation` VARCHAR(255) NOT NULL,
+  `email` VARCHAR(255) NOT NULL,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table: directions
+CREATE TABLE `directions` (
+  `id` CHAR(36) PRIMARY KEY,  -- store UUID from Node.js
+  `email` VARCHAR(255) NOT NULL,
+  `path` TEXT NOT NULL,
+  `createdAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table: payments
+CREATE TABLE `payments` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `passenger_name` VARCHAR(100) NOT NULL,
+  `passenger_phone` VARCHAR(20),
+  `shuttle_id` VARCHAR(50) NOT NULL,
+  `booking_id` INT DEFAULT NULL,
+  `seats` INT NOT NULL,
+  `amount` DECIMAL(10,2) NOT NULL,
+  `status` VARCHAR(50) NOT NULL,
+  `car` VARCHAR(100) DEFAULT 'Toyota Hiace',
+  `payment_date` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Table: api_pool (already exists, example)
+-- SELECT * FROM `api_pool`;
+
